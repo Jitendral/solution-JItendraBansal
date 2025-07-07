@@ -2,6 +2,8 @@ name: Build and Deploy to EC2
 
 on:
   push:
+    paths:
+      - 'assignment/frontend/**'
     branches:
       - main
 
@@ -25,7 +27,7 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: ./frontend
+        context: ./assignment/frontend
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
 

@@ -41,5 +41,12 @@ services:
     ports:
       - "3000:3000"
 
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
 volumes:
   postgres_data:
