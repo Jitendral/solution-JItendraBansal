@@ -45,5 +45,34 @@ jobs:
         script: |
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest
           docker stop backend || true
+
+  deploy-infra:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Initialize Terraform
+      working-directory: assignment/infra
+      run: terraform init
+
+    - name: Terraform Plan
+      working-directory: assignment/infra
+      run: terraform plan
+
+    - name: Terraform Apply
+      working-directory: assignment/infra
+      run: terraform apply -auto-approve
+
+    - name: Get EC2 Public IP
+      working-directory: assignment/infra
+      run: |
+        terraform output ec2_public_ip
+
+
           docker rm backend || true
           docker run -d -p 80:80 --name backend ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest
