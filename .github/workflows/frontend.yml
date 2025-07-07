@@ -1,4 +1,4 @@
-name: Build and Deploy to EC2
+name: Build and Deploy frontend to EC2
 
 on:
   push:
