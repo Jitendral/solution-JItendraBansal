@@ -1,0 +1,51 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.5.4
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+    - name: Copy project files to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "rm -rf /home/ubuntu/temp && mkdir -p /home/ubuntu/temp"
+        scp -o StrictHostKeyChecking=no -r ./frontend ./backend ./monitoring ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/temp/
+
+    - name: Deploy frontend, backend, and monitoring on EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          # Move uploaded files
+          sudo rm -rf /home/ubuntu/frontend /home/ubuntu/backend /home/ubuntu/monitoring
+          sudo mv /home/ubuntu/temp/frontend /home/ubuntu/
+          sudo mv /home/ubuntu/temp/backend /home/ubuntu/
+          sudo mv /home/ubuntu/temp/monitoring /home/ubuntu/
+
+          # FRONTEND
+          cd /home/ubuntu/frontend
+          docker build -t my-frontend .
+          docker stop my-frontend || true && docker rm my-frontend || true
+          docker run -d --name my-frontend -p 3000:3000 my-frontend
+
+          # BACKEND
+          cd /home/ubuntu/backend
+          docker build -t my-backend .
+          docker stop my-backend || true && docker rm my-backend || true
+          docker run -d --name my-backend -p 5000:5000 my-backend
+
+          # MONITORING
+          cd /home/ubuntu/monitoring
+          docker compose down || true
+          docker compose up -d
+        EOF
