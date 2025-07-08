@@ -30,7 +30,7 @@ jobs:
       with:
         context: ./assignment/backend
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/assignment-backend:latest
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/assignment-backend
 
   deploy:
     needs: build
@@ -44,7 +44,7 @@ jobs:
         username: ubuntu
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/assignment-backend:latest
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/assignment-backend
           docker stop backend || true
 
   deploy-infra:
