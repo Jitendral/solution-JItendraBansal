@@ -3,14 +3,17 @@ data "aws_vpc" "default" {
   default = true
 }
 
-# Find an available public subnet in the default VPC
-data "aws_subnet_ids" "default" {
-  vpc_id = data.aws_vpc.default.id
+# Find all subnets in the default VPC
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
 }
 
 # Use the first available subnet
 data "aws_subnet" "default" {
-  id = data.aws_subnet_ids.default.ids[0]
+  id = data.aws_subnets.default.ids[0]
 }
 
 # Create a security group in default VPC
@@ -51,9 +54,9 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 
-# EC2 instance using default subnet + security group
+# Launch EC2 instance in default VPC & subnet
 resource "aws_instance" "demo-user" {
-  ami                    = "ami-0f918f7e67a3323f0" # Ubuntu 20.04 (ap-south-1)
+  ami                    = "ami-0f918f7e67a3323f0" # ✅ Ubuntu 20.04 LTS (ap-south-1)
   instance_type          = var.instance_type
   subnet_id              = data.aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
