@@ -24,8 +24,8 @@ jobs:
         ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "rm -rf /home/ubuntu/temp && mkdir -p /home/ubuntu/temp"
         scp -o StrictHostKeyChecking=no -r ./assignment/frontend ./assignment/backend ./assignment/monitoring ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/temp/
 
-        - name: Deploy frontend, backend, and monitoring on EC2
-          run: |
+    - name: Deploy frontend, backend, and monitoring on EC2
+      run: |
         ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
           # Wait for any apt locks (max 60s)
           for i in {1..12}; do
@@ -75,4 +75,3 @@ jobs:
           sudo docker compose down || true
           sudo docker compose up -d
         EOF
-
