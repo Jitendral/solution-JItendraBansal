@@ -62,7 +62,7 @@ resource "aws_security_group" "ec2_sg" {
 }
 
 resource "aws_instance" "demo-user" {
-  ami                    = "ami-080e1f13689e07408" # Ubuntu 20.04
+  ami                    = "ami-0fc5d935ebf8bc3bc" # Ubuntu 20.04
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
