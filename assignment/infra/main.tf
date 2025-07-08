@@ -1,33 +1,23 @@
-resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
+# Use default VPC
+data "aws_vpc" "default" {
+  default = true
 }
 
-resource "aws_subnet" "public" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = true
+# Find an available public subnet in the default VPC
+data "aws_subnet_ids" "default" {
+  vpc_id = data.aws_vpc.default.id
 }
 
-resource "aws_route_table" "public_rt" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.gw.id
-  }
+# Use the first available subnet
+data "aws_subnet" "default" {
+  id = data.aws_subnet_ids.default.ids[0]
 }
 
-resource "aws_route_table_association" "public_assoc" {
-  subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.public_rt.id
-}
-
-resource "aws_internet_gateway" "gw" {
-  vpc_id = aws_vpc.main.id
-}
-
+# Create a security group in default VPC
 resource "aws_security_group" "ec2_sg" {
-  vpc_id = aws_vpc.main.id
+  name        = "ec2_sg"
+  description = "Allow SSH, HTTP, MinIO (9000), and frontend (3000)"
+  vpc_id      = data.aws_vpc.default.id
 
   ingress {
     from_port   = 22
@@ -46,7 +36,7 @@ resource "aws_security_group" "ec2_sg" {
     to_port     = 9000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-  } 
+  }
   ingress {
     from_port   = 3000
     to_port     = 3000
@@ -61,10 +51,11 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 
+# EC2 instance using default subnet + security group
 resource "aws_instance" "demo-user" {
-  ami                    = "ami-0f918f7e67a3323f0" # Ubuntu 20.04 
+  ami                    = "ami-0f918f7e67a3323f0" # Ubuntu 20.04 (ap-south-1)
   instance_type          = var.instance_type
-  subnet_id              = aws_subnet.public.id
+  subnet_id              = data.aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
   key_name               = var.key_name
 
