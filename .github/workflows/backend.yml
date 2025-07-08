@@ -32,22 +32,8 @@ jobs:
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/assignment-backend:latest
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: SSH into EC2 and deploy
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ubuntu
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/assignment-backend:latest
-          docker stop backend || true
-
   deploy-infra:
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
@@ -69,11 +55,19 @@ jobs:
       working-directory: assignment/infra
       run: terraform apply -auto-approve
 
-    - name: Get EC2 Public IP
-      working-directory: assignment/infra
-      run: |
-        terraform output ec2_public_ip
+  deploy:
+    needs: deploy-infra
+    runs-on: ubuntu-latest
 
-
+    steps:
+    - name: SSH into EC2 and deploy
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/assignment-backend:latest
+          docker stop backend || true
           docker rm backend || true
           docker run -d -p 80:80 --name backend ${{ secrets.DOCKERHUB_USERNAME }}/assignment-backend:latest
