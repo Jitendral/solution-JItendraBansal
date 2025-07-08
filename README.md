@@ -1,75 +1,372 @@
-# Pre-screening Assignment
-This repository contains a pre-screening assignment/problem statement designed to evaluate a candidate's skills in Linux, DevOps, Docker, and troubleshooting.
+ 🚀 Automated EC2 Deployment with GitHub Actions, Terraform, Docker, Prometheus & Grafana
 
-------
-------
+This project demonstrates a **complete DevOps pipeline**:
 
-## *Assignment Overview:*
+✅ Automatically create AWS EC2 infrastructure with Terraform  
+✅ Build and deploy a Dockerized Nginx app  
+✅ Use GitHub Actions for CI/CD  
+✅ Monitor with Prometheus & Grafana  
 
-> This assignment requires the candidate to set up a full-stack application that consists of a frontend and a backend component, with a PostgreSQL database. The goal is to demonstrate your ability to configure, run, and connect different services using Docker.
+---url
 
+## 📂 Folder Structure
 
-### Instructions:
-
-> ### Fork/Clone the Repository:
-
-- Start by forking or directly cloning this repository to your local machine.
 ```
-git clone <repository-url>
-cd <repository-folder>
+
+.
+├── .github
+│   └── workflows
+│       └── deploy.yaml           # GitHub Actions workflow
+├── app
+│   ├── Dockerfile                # Docker image for Nginx
+│   └── html
+│       └── index.html            # Web page content
+├── infra
+│   ├── main.tf                   # Terraform EC2 config
+│   ├── outputs.tf
+│   ├── provider.tf
+│   ├── terraform.tfvars          # Variables (key pair, region)
+│   ├── userdata.sh               # User data script (install Docker)
+│   └── variables.tf
+├── monitoring
+│   ├── docker-compose.yml        # Prometheus + Grafana
+│   └── prometheus.yml            # Prometheus scrape config
+└── README.md
+
+````
+
+---
+
+## ⚙️ Prerequisites
+
+✅ AWS Account  
+✅ EC2 key pair (`.pem`) created in AWS  
+✅ Docker Hub account (username & access token)  
+✅ Terraform installed locally  
+✅ Git installed  
+
+---
+
+## 🛠️ Setup Steps
+
+### 1️⃣ Clone the Repository
+
+```bash
+git clone https://github.com/cloudwifi/my-new-project-for-GithubActionn.git
+cd my-new-project-for-GithubActionn
+````
+
+---
+
+### 2️⃣ Configure Terraform Variables
+
+Edit `infra/terraform.tfvars`:
+
+```hcl
+aws_region    = "ap-south-1"
+instance_type = "t2.micro"
+key_name      = "your-key-pair-name"
 ```
-- Create a New Branch:
 
-Create a new branch in the following format:
+> ℹ️ **IMPORTANT:**
+> Replace `your-key-pair-name` with the actual name of your AWS key pair.
+
+---
+
+### 3️⃣ Initialize Terraform
+
+```bash
+cd infra
+terraform init
 ```
-git checkout -b solutions-{your-name}
+
+---
+
+### 4️⃣ Apply Terraform
+
+```bash
+terraform apply
 ```
-> ### Project Structure:
+
+✅ This will:
+
+* Provision an EC2 instance
+* Install Docker
+* Start Prometheus and Grafana containers
+
+---
+
+### 5️⃣ Configure GitHub Secrets
+
+In **Settings > Secrets and variables > Actions**, add:
+
+| Name              | Description                        |
+| ----------------- | ---------------------------------- |
+| `DOCKER_USERNAME` | Your Docker Hub username           |
+| `DOCKER_PASSWORD` | Your Docker Hub token or password  |
+| `EC2_HOST`        | EC2 Public IP (e.g., `ec2-...`)    |
+| `EC2_USER`        | `ubuntu`                           |
+| `EC2_SSH_KEY`     | Private key content of `.pem` file |
+
+✅ **Tip:**
+To get the `.pem` content, open in Notepad and copy everything.
+
+---
+
+### 6️⃣ Deploy with GitHub Actions
+
+Whenever you **push to `main`**, the workflow will:
+
+* Build the Docker image
+* Push to Docker Hub
+* SSH into EC2 and run the container
+
+✅ To trigger manually:
+
+```bash
+git add .
+git commit -m "Trigger deployment"
+git push
+```
+
+---
+
+## 🌐 Access the Application
+
+* **App URL:**
+
+  ```
+  http://<EC2-Public-IP>
+  ```
+
+* **Grafana:**
+
+  ```
+  http://<EC2-Public-IP>:3000
+  ```
+
+  Default credentials: `admin` / `admin` (you’ll be prompted to change)
+
+---
+
+## 📊 Monitoring with Grafana
+
+**Prometheus collects:**
+
+* Docker container metrics
+* (Optional) Node metrics if you add Node Exporter
+
+**Grafana visualizes:**
+
+* CPU, Memory, Disk
+* Container health
+
+✅ To import a Docker monitoring dashboard:
+
+1. Log in to Grafana
+2. Click ➕ **Create > Import**
+3. Use **Dashboard ID `893`**
+
+---
+
+## 💡 Next Steps & Enhancements
+
+* Install Node Exporter for EC2 system metrics
+* Add Blackbox Exporter for HTTP health checks
+* Create Grafana alerts (email or Slack)
+* Automate domain names & HTTPS with Certbot
+
+---
+
+## 🙏 Acknowledgments
+
+* [Terraform](https://www.terraform.io/)
+* [Docker](https://www.docker.com/)
+* [GitHub Actions](https://docs.github.com/actions)
+* [Prometheus](https://prometheus.io/)
+* [Grafana](https://grafana.com/)
+
+---
+
+## 📝 License
+
+MIT
+
+````
+
+---
+
+✅ **How to use this:**
+1. **Copy everything above**
+2. Create or overwrite `README.md` in your project root
+3. Commit and push:
+
+```bash
+git add README.md
+git commit -m "Add project README"
+git push
+````
+
+---
+📈 Extended Monitoring (Logs + Metrics)
+This project includes advanced monitoring capabilities using Prometheus, Grafana, Loki, Promtail, and Node Exporter.
+
+🔧 Use Loki + Promtail + Grafana
+This is the recommended stack for log monitoring:
+
+Component	Purpose
+Loki	Stores logs (like Prometheus for logs)
+Promtail	Collects logs from your app/host
+Grafana	Visualizes logs (via Loki)
+
+🛠️ Step-by-Step Setup
+1. 🐳 Install Loki and Promtail Using Docker Compose
+
+Inside your monitoring/ folder, update your docker-compose.yml:
+
+version: '3'
+
+services:
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
+  loki:
+    image: grafana/loki:2.9.4
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:2.9.4
+    volumes:
+      - /var/log:/var/log
+      - ./promtail-config.yaml:/etc/promtail/config.yaml
+    command: -config.file=/etc/promtail/config.yaml
+
+volumes:
+  grafana-storage:
+  
+2.Create promtail-config.yaml in monitoring/ folder:
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          __path__: /var/log/*.log
+This collects logs like /var/log/syslog, /var/log/docker.log, etc.
+
+3. 🚀 Start All Services
+Run from inside your monitoring/ folder:
+
+bash
+Copy
+Edit
+docker-compose up -d
+
+4. 📊 Connect Loki to Grafana
+Visit Grafana: http://<EC2_PUBLIC_IP>:3000
+
+Go to Settings → Data Sources → Add data source
+
+Choose Loki
+
+Set the URL to: http://loki:3100
+
+Click Save & Test
 
 
-The application is located in the `assignment/` directory, which contains two main components:
-- Backend: Located in the `backend/` folder.
-- Frontend: Located in the `frontend/` folder.
+📝 To Monitor App Logs
+If you want to monitor logs specifically from your Dockerized app, update the Promtail config to:
 
-- Environment Variables:
+yaml
+Copy
+Edit
+scrape_configs:
+  - job_name: myapp
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: myapp
+          __path__: /var/lib/docker/containers/*/*.log
 
-    Create the necessary .env file required for the services to run properly. Ensure that you include all the required environment variables.
+✅ Metrics Monitoring (System & Containers)
+Prometheus scrapes metrics from:
 
-> ### Docker Setup:
+Docker containers
 
-Each folder contains its respective Dockerfile named appropriately. *You will need to make adjustments/troubleshoot to ensure everything works seamlessly.*
-The backend should work with a PostgreSQL database for full functionality.
+The EC2 host via Node Exporter
 
-- Run PostgreSQL Database:
+Grafana visualizes these metrics using dashboards
 
-> You need to run the PostgreSQL database in a Docker container along with the backend and frontend services.
-Using Docker Compose or
+📌 To view system-level metrics:
 
-> You need to run all the applications along with the PostgreSQL in container.
+Access Grafana: http://<EC2-Public-IP>:3000
 
-- Creating a docker compose YML file
+Login with default credentials (admin / admin)
 
-> ### Accessing the Application:
+Go to ➕ Create > Import
 
-Once all services are running:
-- The frontend should be accessible at http://localhost:3000.
-![frontend](frontend-output.png)
+Use Dashboard ID 1860 for Node Exporter / Linux host overview
 
-- The backend (FastAPI) should be accessible at http://localhost:8000/docs for the Swagger UI.
-![backend](backend-output.png)
+✅ Logs Monitoring with Loki + Promtail + Grafana
+Logs are captured in real-time from your EC2 instance:
 
-- PostgreSQL should be running on its default port 5432.
+Promtail collects logs from /var/log/ and Docker containers
 
-> ### User Interface:
+Loki stores and indexes these logs
 
-The frontend should prompt you for *signup* and *login* operations. You've to create a user and then login using that credentials to show that the communication between frontend and backend has been made correctly.
-After successful operations, the UI should provide appropriate feedback messages.
+Grafana queries and visualizes logs via the Loki data source
 
+📌 To explore logs:
 
-> ## Documentation and Submission:
+Go to Grafana → Explore
 
-- Capture a `screen-recording` or take `screenshots` of all the activities above, including running the services, accessing the frontend and backend, and user interactions and share the same recorded files/screenshots over Google Drive.
+Select Loki as data source
 
-- Commit all your code changes to your created branch as instructed above.
+Query:
 
-- After commiting and pushing changes, copy the branch name (along with GitHub URL, and Google Drive URL) and share the same over the screening mail received on your email.
+arduino
+Copy
+Edit
+{job="varlogs"}
+Or:
+
+arduino
+Copy
+Edit
+{job="myapp"}
+You’ll see logs from system files or your Dockerized app instantly!
+
+🧩 Services Running on EC2
+Service	Port	Description
+Nginx App	80	Your deployed app
+Prometheus	9090	Metrics monitoring
+Grafana	3000	Dashboards for metrics/logs
+Loki	3100	Log aggregation
+Node Exporter	9100	EC2 system metrics
+
