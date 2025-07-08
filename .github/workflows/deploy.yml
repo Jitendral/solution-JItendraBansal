@@ -24,9 +24,19 @@ jobs:
         ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "rm -rf /home/ubuntu/temp && mkdir -p /home/ubuntu/temp"
         scp -o StrictHostKeyChecking=no -r ./assignment/frontend ./assignment/backend ./assignment/monitoring ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/temp/
 
-    - name: Deploy frontend, backend, and monitoring on EC2
-      run: |
+        - name: Deploy frontend, backend, and monitoring on EC2
+          run: |
         ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          # Wait for any apt locks (max 60s)
+          for i in {1..12}; do
+            if sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1; then
+              echo "Waiting for apt lock..."
+              sleep 5
+            else
+              break
+            fi
+          done
+
           # Install Docker if not already installed
           if ! command -v docker &> /dev/null; then
             echo "Installing Docker..."
@@ -34,11 +44,11 @@ jobs:
             sudo apt install -y ca-certificates curl gnupg
             sudo install -m 0755 -d /etc/apt/keyrings
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-            echo \
-              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-              $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
+              sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
             sudo apt update -y
             sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            sudo groupadd docker || true
             sudo usermod -aG docker ubuntu
           fi
 
@@ -50,18 +60,19 @@ jobs:
 
           # FRONTEND
           cd /home/ubuntu/frontend
-          docker build -t my-frontend .
-          docker stop my-frontend || true && docker rm my-frontend || true
-          docker run -d --name my-frontend -p 3000:3000 my-frontend
+          sudo docker build -t my-frontend .
+          sudo docker stop my-frontend || true && sudo docker rm my-frontend || true
+          sudo docker run -d --name my-frontend -p 3000:3000 my-frontend
 
           # BACKEND
           cd /home/ubuntu/backend
-          docker build -t my-backend .
-          docker stop my-backend || true && docker rm my-backend || true
-          docker run -d --name my-backend -p 5000:5000 my-backend
+          sudo docker build -t my-backend .
+          sudo docker stop my-backend || true && sudo docker rm my-backend || true
+          sudo docker run -d --name my-backend -p 5000:5000 my-backend
 
           # MONITORING
           cd /home/ubuntu/monitoring
-          docker compose down || true
-          docker compose up -d
+          sudo docker compose down || true
+          sudo docker compose up -d
         EOF
+
