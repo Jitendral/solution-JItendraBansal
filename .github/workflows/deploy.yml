@@ -22,7 +22,7 @@ jobs:
     - name: Copy project files to EC2
       run: |
         ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "rm -rf /home/ubuntu/temp && mkdir -p /home/ubuntu/temp"
-        scp -o StrictHostKeyChecking=no -r ./frontend ./backend ./monitoring ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/temp/
+        scp -o StrictHostKeyChecking=no -r ./assignment/frontend ./assignment/backend ./assignment/monitoring ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/temp/
 
     - name: Deploy frontend, backend, and monitoring on EC2
       run: |
