@@ -16,13 +16,11 @@ data "aws_subnet" "default" {
   id = data.aws_subnets.default.ids[0]
 }
 
+# Create Security Group
 resource "aws_security_group" "ec2_sg" {
   name        = "ec2_sg_${var.project_name}"  # Make name unique
   description = "Allow SSH, HTTP, MinIO (9000), and frontend (3000)"
   vpc_id      = data.aws_vpc.default.id
-  ...
-}
-
 
   ingress {
     from_port   = 22
@@ -30,24 +28,28 @@ resource "aws_security_group" "ec2_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
   ingress {
     from_port   = 9000
     to_port     = 9000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
   ingress {
     from_port   = 3000
     to_port     = 3000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -58,7 +60,7 @@ resource "aws_security_group" "ec2_sg" {
 
 # Launch EC2 instance in default VPC & subnet
 resource "aws_instance" "demo-user" {
-  ami                    = "ami-0f918f7e67a3323f0" # ✅ Ubuntu 20.04 LTS (ap-south-1)
+  ami                    = "ami-0f918f7e67a3323f0" # Ubuntu 20.04 LTS (ap-south-1)
   instance_type          = var.instance_type
   subnet_id              = data.aws_subnet.default.id
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
