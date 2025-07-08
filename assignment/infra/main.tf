@@ -16,11 +16,15 @@ data "aws_subnet" "default" {
   id = data.aws_subnets.default.ids[0]
 }
 
-# Create Security Group
 resource "aws_security_group" "ec2_sg" {
-  name        = "ec2_sg_${var.project_name}"  # Make name unique
-  description = "Allow SSH, HTTP, MinIO (9000), and frontend (3000)"
-  vpc_id      = data.aws_vpc.default.id
+  name        = "ec2_sg_devops-project-${random_id.suffix.hex}"
+  ...
+}
+
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
 
   ingress {
     from_port   = 22
